@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Self-Service — Good Rich Power Plus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Sarabun',Tahoma,sans-serif;background:#f0f2f5;color:#333;min-height:100vh}
+button{cursor:pointer;border:none;font-family:inherit;font-size:14px}
+input,select,textarea{font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid #d0d0d0;border-radius:8px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-shadow:0 0 0 3px rgba(26,58,108,.15)}
+
+:root{
+  --navy:#1a3a6c;--blue:#2a5298;--blue-light:#e8f4fd;
+  --red:#c62828;--red-light:#fde8e8;
+  --green:#2e7d32;--green-light:#e8f5e9;
+  --yellow:#f9a825;--yellow-light:#fffde7;
+  --orange:#e65100;
+  --gray1:#f8f9fa;--gray2:#e0e0e0;--gray3:#999
+}
+
+/* Layout */
+.screen{display:none}.screen.active{display:block}
+.container{max-width:720px;margin:0 auto;padding:12px 16px 80px}
+
+/* Login */
+#loginScreen{background:linear-gradient(135deg,var(--navy),var(--blue));min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:16px;padding:40px 32px;width:100%;max-width:380px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.login-logo{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--gray3);margin-bottom:28px}
+.login-input-wrap{position:relative;margin-bottom:16px}
+.login-input-wrap input{padding:12px 16px;font-size:16px;letter-spacing:2px;text-align:center}
+.login-error{color:var(--red);font-size:13px;margin-top:8px;min-height:20px}
+.login-loading{color:var(--blue);font-size:13px;margin-top:8px;display:none}
+
+/* Topbar */
+.topbar{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.topbar-info{display:flex;flex-direction:column}
+.topbar-name{font-size:15px;font-weight:700}
+.topbar-dept{font-size:11px;opacity:.8}
+.btn-logout{background:rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--gray2);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav button{flex:1;padding:10px 0 8px;background:none;display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--gray3);gap:2px}
+.bottom-nav button.active{color:var(--blue)}
+.nav-icon{font-size:20px}
+
+/* Cards */
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;margin-bottom:12px}
+.card-header{background:linear-gradient(135deg,var(--navy),var(--blue));padding:16px 20px;color:#fff}
+.card-header h2{font-size:16px;font-weight:700}
+.card-header p{font-size:12px;opacity:.8;margin-top:2px}
+.card-body{padding:16px 20px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 20px;border-radius:8px;font-weight:600;font-size:14px;transition:all .15s;gap:6px}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--navy)}
+.btn-secondary{background:var(--gray1);color:#333;border:1px solid var(--gray2)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-block{width:100%;padding:14px}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+
+/* Badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-pending{background:var(--yellow-light);color:var(--orange);border:1px solid var(--yellow)}
+.badge-approved{background:var(--green-light);color:var(--green);border:1px solid var(--green)}
+.badge-rejected{background:var(--red-light);color:var(--red);border:1px solid var(--red)}
+.badge-cancelled{background:var(--gray1);color:var(--gray3);border:1px solid var(--gray2)}
+
+/* Month selector */
+.month-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.month-bar select{flex:1;font-weight:600;font-size:15px}
+
+/* Attendance Calendar */
+.att-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.att-sum-box{background:var(--gray1);border-radius:8px;padding:10px;text-align:center;border:1px solid var(--gray2)}
+.att-sum-box .sum-num{font-size:22px;font-weight:700;line-height:1}
+.att-sum-box .sum-label{font-size:10px;color:var(--gray3);margin-top:3px}
+.att-sum-box.s-work{border-color:var(--green);background:var(--green-light)}
+.att-sum-box.s-work .sum-num{color:var(--green)}
+.att-sum-box.s-absent{border-color:var(--red);background:var(--red-light)}
+.att-sum-box.s-absent .sum-num{color:var(--red)}
+.att-sum-box.s-leave{border-color:var(--blue);background:var(--blue-light)}
+.att-sum-box.s-leave .sum-num{color:var(--blue)}
+.att-sum-box.s-late{border-color:var(--yellow);background:var(--yellow-light)}
+.att-sum-box.s-late .sum-num{color:var(--orange)}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px}
+.cal-header{text-align:center;font-size:10px;font-weight:600;color:var(--gray3);padding:4px 0}
+.cal-cell{text-align:center;padding:6px 2px;border-radius:6px;font-size:10px;cursor:default}
+.cal-cell .d-num{font-weight:700;font-size:12px;display:block;margin-bottom:1px}
+.cal-cell .d-status{font-size:9px;display:block}
+.cal-cell.work{background:var(--green-light);color:var(--green)}
+.cal-cell.absent{background:var(--red-light);color:var(--red)}
+.cal-cell.sick,.cal-cell.leave,.cal-cell.vacation,.cal-cell.maternity{background:var(--blue-light);color:var(--blue)}
+.cal-cell.late{background:var(--yellow-light);color:var(--orange)}
+.cal-cell.holiday,.cal-cell.off{background:var(--gray1);color:var(--gray3)}
+.cal-cell.empty{background:transparent}
+.cal-cell.nodata{background:var(--gray1);color:#ccc}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px;font-size:10px;margin-bottom:4px}
+.legend span{display:flex;align-items:center;gap:3px}
+.legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* Leave Form */
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;font-weight:600;color:#555;display:block;margin-bottom:6px}
+.leave-list{display:flex;flex-direction:column;gap:10px}
+.leave-item{background:var(--gray1);border-radius:10px;padding:14px;border:1px solid var(--gray2)}
+.leave-item-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.leave-item-type{font-weight:700;font-size:14px}
+.leave-item-dates{font-size:12px;color:var(--gray3)}
+.leave-item-reason{font-size:12px;color:#555;margin-top:4px}
+.leave-item-note{font-size:12px;color:var(--blue);margin-top:4px;font-style:italic}
+
+/* Payslip */
+.net-pay-box{background:var(--blue-light);border-left:4px solid var(--navy);border-radius:8px;padding:16px 20px;margin-bottom:14px}
+.net-label{font-size:12px;color:#666}
+.net-amount{font-size:30px;font-weight:700;color:var(--navy);margin:4px 0}
+.net-month{font-size:12px;color:var(--gray3)}
+.pay-table{width:100%;border-collapse:collapse;font-size:13px}
+.pay-table td{padding:6px 4px}
+.pay-table .label{color:#555}.pay-table .amount{text-align:right;font-weight:500}
+.pay-table .deduct .label{color:var(--red)}.pay-table .deduct .amount{color:var(--red)}
+.pay-total{display:flex;justify-content:space-between;padding:8px 10px;border-radius:6px;font-size:13px;font-weight:600;margin-top:6px}
+.pay-total-income{background:var(--blue-light);color:var(--navy)}
+.pay-total-deduct{background:var(--red-light);color:var(--red)}
+.emp-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:14px}
+.info-label{color:var(--gray3)}.info-val{font-weight:600}
+
+/* Loading / Empty */
+.loading{text-align:center;padding:32px;color:var(--gray3);font-size:14px}
+.empty{text-align:center;padding:32px;color:var(--gray3)}
+.empty-icon{font-size:36px;margin-bottom:8px}
+
+/* Divider */
+.divider{height:1px;background:var(--gray2);margin:12px 0}
+.section-title{font-size:13px;font-weight:700;color:var(--gray3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="loginScreen" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">Good Rich Power Plus</div>
+    <div class="login-sub">ระบบ HR Self-Service พนักงาน</div>
+    <div class="login-input-wrap">
+      <input type="tel" id="loginInput" maxlength="13" placeholder="เลขบัตรประชาชน 13 หลัก" inputmode="numeric" autocomplete="off">
+    </div>
+    <button class="btn btn-primary btn-block" id="loginBtn">เข้าสู่ระบบ</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-loading" id="loginLoading">กำลังตรวจสอบ...</div>
+  </div>
+</div>
+
+<!-- ═══ APP SCREEN ═══ -->
+<div id="appScreen" class="screen">
+  <div class="topbar">
+    <div class="topbar-info">
+      <div class="topbar-name" id="topName"></div>
+      <div class="topbar-dept" id="topDept"></div>
+    </div>
+    <button class="btn-logout" id="logoutBtn">ออก</button>
+  </div>
+
+  <div class="container">
+    <!-- Tab: Attendance -->
+    <div id="tabAttendance" class="tab-content">
+      <div id="attContent"><div class="loading">⏳ กำลังโหลด...</div></div>
+    </div>
+
+    <!-- Tab: Leave -->
+    <div id="tabLeave" class="tab-content" style="display:none">
+      <div id="leaveContent"><div class="loading">⏳ กำลังโหลด...</div></div>
+    </div>
+
+    <!-- Tab: Payslip -->
+    <div id="tabPayslip" class="tab-content" style="display:none">
+      <div id="payContent"><div class="loading">⏳ กำลังโหลด...</div></div>
+    </div>
+  </div>
+
+  <div class="bottom-nav" id="bottomNav">
+    <button data-tab="tabAttendance" class="active"><span class="nav-icon">📅</span>ตารางมา</button>
+    <button data-tab="tabLeave"><span class="nav-icon">📝</span>ลางาน</button>
+    <button data-tab="tabPayslip"><span class="nav-icon">💰</span>เงินเดือน</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG — แก้ URL หลัง deploy Apps Script
+// ============================================================
+var API_URL = 'https://script.google.com/macros/s/AKfycbwAXmDQUtoEgBueR7hnEdVm3aIQYrHF98TOWid-vtEcA5nTFihebUEDdDV34tjO2QH_Og/exec';
+
+// ============================================================
+// STATE
+// ============================================================
+var _session = null;
+var _credential = '';
+var _months = [];
+var _attMonth = '';
+var _payMonth = '';
+var _attLoaded = false;
+var _leaveLoaded = false;
+var _payLoaded = false;
+
+// ============================================================
+// UTILS
+// ============================================================
+function $(id) { return document.getElementById(id); }
+function fmt(n) {
+  var num = parseFloat(n) || 0;
+  return num.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtDate(d) {
+  if (!d) return '';
+  var s = String(d).substring(0, 10);
+  var parts = s.split('-');
+  if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + (parseInt(parts[0]) + 543);
+  return s;
+}
+function statusBadge(s) {
+  var cls = {รออนุมัติ:'badge-pending', อนุมัติ:'badge-approved', ไม่อนุมัติ:'badge-rejected', ยกเลิก:'badge-cancelled'}[s] || 'badge-pending';
+  return '<span class="badge ' + cls + '">' + s + '</span>';
+}
+
+async function apiGet(action, params) {
+  var url = API_URL + '?action=' + encodeURIComponent(action);
+  if (params) Object.keys(params).forEach(function(k) {
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  });
+  var res = await fetch(url);
+  var text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { return {success:false, error:'Response error: ' + text.substring(0, 100)}; }
+}
+
+async function apiPost(payload) {
+  payload.empId = _session.empId;
+  payload.credential = _credential;
+  var res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(payload)
+  });
+  var text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e) { return {success:false, error:'Response error'}; }
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+$('loginBtn').addEventListener('click', doLogin);
+$('loginInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+
+async function doLogin() {
+  var cred = $('loginInput').value.replace(/\D/g, '');
+  $('loginError').textContent = '';
+  if (cred.length !== 13) { $('loginError').textContent = 'กรุณากรอกเลขบัตรประชาชน 13 หลัก'; return; }
+  $('loginLoading').style.display = 'block';
+  $('loginBtn').disabled = true;
+  try {
+    var result = await apiGet('login', {credential: cred});
+    if (!result.success) { $('loginError').textContent = result.error; return; }
+    _session = result.data;
+    _credential = cred;
+    $('loginScreen').classList.remove('active');
+    $('appScreen').classList.add('active');
+    $('topName').textContent = _session.name + (_session.nickname ? ' (' + _session.nickname + ')' : '');
+    $('topDept').textContent = _session.dept + ' — ' + _session.position;
+    await _loadMonths();
+    loadAttendance();
+  } catch(err) {
+    $('loginError').textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+  } finally {
+    $('loginLoading').style.display = 'none';
+    $('loginBtn').disabled = false;
+  }
+}
+
+$('logoutBtn').addEventListener('click', function() {
+  _session = null; _credential = '';
+  _attLoaded = false; _leaveLoaded = false; _payLoaded = false;
+  $('appScreen').classList.remove('active');
+  $('loginScreen').classList.add('active');
+  $('loginInput').value = '';
+  $('loginError').textContent = '';
+});
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+$('bottomNav').addEventListener('click', function(e) {
+  var btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  var tab = btn.dataset.tab;
+  document.querySelectorAll('.bottom-nav button').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(function(t) { t.style.display = 'none'; });
+  $(tab).style.display = '';
+  if (tab === 'tabAttendance') loadAttendance();
+  if (tab === 'tabLeave' && !_leaveLoaded) loadLeave();
+  if (tab === 'tabPayslip' && !_payLoaded) loadPayslip();
+});
+
+// ============================================================
+// MONTHS
+// ============================================================
+async function _loadMonths() {
+  var r = await apiGet('getMonths', {empId: _session.empId, credential: _credential});
+  if (r.success) {
+    _months = r.data;
+    _attMonth = _months[0] || _nowMonth();
+    _payMonth = _months[0] || _nowMonth();
+  }
+}
+function _nowMonth() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function _monthLabel(m) {
+  if (!m) return '';
+  var parts = m.split('-');
+  var thMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return thMonths[parseInt(parts[1])] + ' ' + (parseInt(parts[0]) + 543);
+}
+function _buildMonthSelect(id, value, onChange) {
+  var html = '<select id="' + id + '">';
+  _months.forEach(function(m) {
+    html += '<option value="' + m + '"' + (m === value ? ' selected' : '') + '>' + _monthLabel(m) + '</option>';
+  });
+  return html + '</select>';
+}
+
+// ============================================================
+// TAB: ATTENDANCE
+// ============================================================
+async function loadAttendance() {
+  if (!_session) return;
+  $('attContent').innerHTML = '<div class="loading">⏳ กำลังโหลดข้อมูลการเข้างาน...</div>';
+  var r = await apiGet('getAttendance', {empId: _session.empId, credential: _credential, month: _attMonth});
+  if (!r.success) { $('attContent').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>' + r.error + '</div>'; return; }
+  _renderAttendance(r.data);
+}
+
+function _renderAttendance(records) {
+  var month = _attMonth;
+  var parts = month.split('-');
+  var year = parseInt(parts[0]);
+  var mon = parseInt(parts[1]);
+  var daysInMonth = new Date(year, mon, 0).getDate();
+  var firstDay = new Date(year, mon - 1, 1).getDay(); // 0=Sun
+
+  // Build record map
+  var recMap = {};
+  records.forEach(function(r) {
+    var day = String(r.date).split('-')[2];
+    recMap[parseInt(day)] = r;
+  });
+
+  // Summary counts
+  var counts = {work:0, absent:0, leave:0, late:0, ot:0};
+  Object.keys(recMap).forEach(function(d) {
+    var r = recMap[d];
+    var st = String(r.status || '');
+    if (st === 'ทำงาน') counts.work++;
+    else if (st === 'ขาด') counts.absent++;
+    else if (st === 'มาสาย') { counts.late++; counts.work++; }
+    else if (st.indexOf('ลา') === 0) counts.leave++;
+    counts.ot += Number(r.ot) || 0;
+  });
+
+  var weekDays = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  var statusLabel = {ทำงาน:'ทำ', ขาด:'ขาด', ลาป่วย:'ป่วย', ลากิจ:'กิจ', ลาพักร้อน:'พัก', วันหยุด:'หยุด', มาสาย:'สาย', ลาคลอด:'คลอด'};
+  var statusClass = {ทำงาน:'work', ขาด:'absent', ลาป่วย:'sick', ลากิจ:'leave', ลาพักร้อน:'vacation', วันหยุด:'holiday', มาสาย:'late', ลาคลอด:'maternity', '':'nodata'};
+
+  var html = '<div class="card">';
+  html += '<div class="card-header"><h2>📅 ตารางการเข้างาน</h2><p>' + _monthLabel(month) + '</p></div>';
+  html += '<div class="card-body">';
+  html += '<div class="month-bar">' + _buildMonthSelect('attMonSel', month) + '</div>';
+
+  // Summary boxes
+  html += '<div class="att-summary">';
+  html += '<div class="att-sum-box s-work"><div class="sum-num">' + counts.work + '</div><div class="sum-label">วันทำงาน</div></div>';
+  html += '<div class="att-sum-box s-absent"><div class="sum-num">' + counts.absent + '</div><div class="sum-label">ขาดงาน</div></div>';
+  html += '<div class="att-sum-box s-leave"><div class="sum-num">' + counts.leave + '</div><div class="sum-label">วันลา</div></div>';
+  html += '<div class="att-sum-box s-late"><div class="sum-num">' + counts.late + '</div><div class="sum-label">มาสาย</div></div>';
+  html += '</div>';
+
+  // OT display
+  if (counts.ot > 0) {
+    html += '<div style="background:#e8f4fd;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#1a3a6c"><strong>OT รวม:</strong> ' + counts.ot + ' ชั่วโมง</div>';
+  }
+
+  // Calendar grid
+  html += '<div class="cal-grid">';
+  weekDays.forEach(function(d) { html += '<div class="cal-header">' + d + '</div>'; });
+  // Empty cells before first day
+  for (var e = 0; e < firstDay; e++) html += '<div class="cal-cell empty"></div>';
+  for (var d = 1; d <= daysInMonth; d++) {
+    var dow = (firstDay + d - 1) % 7;
+    var isWeekend = dow === 0 || dow === 6;
+    var rec = recMap[d];
+    var st = rec ? String(rec.status || '') : (isWeekend ? 'วันหยุด' : '');
+    var cls = statusClass[st] || (isWeekend ? 'off' : 'nodata');
+    var lbl = statusLabel[st] || (isWeekend ? 'หยุด' : '-');
+    var otStr = (rec && rec.ot > 0) ? '<span style="font-size:8px">OT' + rec.ot + '</span>' : '';
+    html += '<div class="cal-cell ' + cls + '"><span class="d-num">' + d + '</span><span class="d-status">' + lbl + '</span>' + otStr + '</div>';
+  }
+  html += '</div>';
+
+  // Legend
+  html += '<div class="legend">';
+  html += '<span><span class="dot" style="background:#c8e6c9"></span>ทำงาน</span>';
+  html += '<span><span class="dot" style="background:#ffcdd2"></span>ขาด</span>';
+  html += '<span><span class="dot" style="background:#bbdefb"></span>ลา</span>';
+  html += '<span><span class="dot" style="background:#fff9c4"></span>มาสาย</span>';
+  html += '<span><span class="dot" style="background:#f5f5f5"></span>หยุด/-</span>';
+  html += '</div>';
+
+  html += '</div></div>';
+  $('attContent').innerHTML = html;
+  $('attMonSel').addEventListener('change', function() {
+    _attMonth = this.value;
+    loadAttendance();
+  });
+}
+
+// ============================================================
+// TAB: LEAVE
+// ============================================================
+async function loadLeave() {
+  if (!_session) return;
+  _leaveLoaded = true;
+  $('leaveContent').innerHTML = '<div class="loading">⏳ กำลังโหลด...</div>';
+  var r = await apiGet('getLeave', {empId: _session.empId, credential: _credential});
+  if (!r.success) { $('leaveContent').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>' + r.error + '</div>'; return; }
+  _renderLeave(r.data);
+}
+
+function _renderLeave(records) {
+  var html = '';
+
+  // Form card
+  html += '<div class="card">';
+  html += '<div class="card-header"><h2>📝 ยื่นใบลา</h2></div>';
+  html += '<div class="card-body">';
+  html += '<div class="form-group"><label class="form-label">ประเภทการลา</label>';
+  html += '<select id="lvType"><option>ลาป่วย</option><option>ลากิจ</option><option>ลาพักร้อน</option><option>ลาคลอด</option></select></div>';
+  html += '<div style="display:flex;gap:10px;margin-bottom:14px">';
+  html += '<div style="flex:1"><label class="form-label">วันที่เริ่ม</label><input type="date" id="lvStart"></div>';
+  html += '<div style="flex:1"><label class="form-label">วันที่สิ้นสุด</label><input type="date" id="lvEnd"></div>';
+  html += '</div>';
+  html += '<div class="form-group"><label class="form-label">เหตุผล (ถ้ามี)</label><textarea id="lvReason" rows="2" placeholder="ระบุเหตุผล..."></textarea></div>';
+  html += '<button class="btn btn-primary btn-block" id="lvSubmitBtn" onclick="submitLeave()">ยื่นใบลา</button>';
+  html += '<div id="lvMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>';
+  html += '</div></div>';
+
+  // Default dates
+  var today = new Date().toISOString().split('T')[0];
+
+  // History card
+  html += '<div class="card">';
+  html += '<div class="card-header"><h2>📋 ประวัติการลา</h2></div>';
+  html += '<div class="card-body">';
+  if (records.length === 0) {
+    html += '<div class="empty"><div class="empty-icon">📭</div><div>ยังไม่มีประวัติการลา</div></div>';
+  } else {
+    html += '<div class="leave-list">';
+    records.forEach(function(r) {
+      html += '<div class="leave-item">';
+      html += '<div class="leave-item-header">';
+      html += '<div><div class="leave-item-type">' + r.leaveType + '</div>';
+      html += '<div class="leave-item-dates">' + fmtDate(r.startDate) + ' – ' + fmtDate(r.endDate) + ' (' + r.days + ' วัน)</div></div>';
+      html += statusBadge(r.status) + '</div>';
+      if (r.reason) html += '<div class="leave-item-reason">เหตุผล: ' + r.reason + '</div>';
+      if (r.hrNote) html += '<div class="leave-item-note">หมายเหตุ HR: ' + r.hrNote + '</div>';
+      if (r.status === 'รออนุมัติ') {
+        html += '<button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="cancelLeave(\'' + r.requestId + '\')">ยกเลิก</button>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div></div>';
+
+  $('leaveContent').innerHTML = html;
+  $('lvStart').value = today;
+  $('lvEnd').value = today;
+}
+
+async function submitLeave() {
+  var type = $('lvType').value;
+  var start = $('lvStart').value;
+  var end = $('lvEnd').value;
+  var reason = $('lvReason').value.trim();
+  var msg = $('lvMsg');
+  if (!start || !end) { msg.style.color = 'red'; msg.textContent = 'กรุณาเลือกวันที่'; return; }
+  if (end < start) { msg.style.color = 'red'; msg.textContent = 'วันสิ้นสุดต้องหลังวันเริ่ม'; return; }
+  var days = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
+  $('lvSubmitBtn').disabled = true;
+  msg.style.color = 'gray'; msg.textContent = 'กำลังส่ง...';
+  var r = await apiPost({action:'submitLeave', leaveType:type, startDate:start, endDate:end, days:days, reason:reason});
+  if (r.success) {
+    msg.style.color = 'green'; msg.textContent = '✅ ยื่นใบลาเรียบร้อย รอ HR อนุมัติ';
+    _leaveLoaded = false;
+    setTimeout(loadLeave, 1000);
+  } else {
+    msg.style.color = 'red'; msg.textContent = '❌ ' + r.error;
+    $('lvSubmitBtn').disabled = false;
+  }
+}
+
+async function cancelLeave(requestId) {
+  if (!confirm('ยืนยันยกเลิกใบลานี้?')) return;
+  var r = await apiPost({action:'cancelLeave', requestId:requestId});
+  if (r.success) { _leaveLoaded = false; loadLeave(); }
+  else alert('❌ ' + r.error);
+}
+
+// ============================================================
+// TAB: PAYSLIP
+// ============================================================
+async function loadPayslip() {
+  if (!_session) return;
+  _payLoaded = true;
+  $('payContent').innerHTML = '<div class="loading">⏳ กำลังโหลด...</div>';
+  var r = await apiGet('getPayslip', {empId: _session.empId, credential: _credential, month: _payMonth});
+  if (!r.success) { $('payContent').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>' + r.error + '</div>'; return; }
+  _renderPayslip(r.data, r.empInfo);
+}
+
+function _renderPayslip(pay, empInfo) {
+  var html = '<div class="card">';
+  html += '<div class="card-header"><h2>💰 ใบเงินเดือน</h2></div>';
+  html += '<div class="card-body">';
+  html += '<div class="month-bar">' + _buildMonthSelect('payMonSel', _payMonth) + '</div>';
+
+  if (!pay) {
+    // No payroll record yet — show base info
+    var sal = empInfo ? empInfo.salary : 0;
+    var allow = empInfo ? empInfo.allowances : 0;
+    html += '<div style="background:#fff9c4;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#e65100">⚠️ ยังไม่มีข้อมูลเงินเดือนเดือนนี้ (HR ยังไม่บันทึก)</div>';
+    html += '<div class="net-pay-box"><div class="net-label">เงินเดือนฐาน (ข้อมูลเบื้องต้น)</div>';
+    html += '<div class="net-amount">฿' + fmt(sal) + '</div>';
+    if (allow > 0) html += '<div class="net-month">+ เบี้ยเลี้ยง ฿' + fmt(allow) + '</div>';
+    html += '</div>';
+  } else {
+    html += '<div class="net-pay-box"><div class="net-label">เงินสุทธิที่ได้รับ</div>';
+    html += '<div class="net-amount">฿' + fmt(pay.netPay) + '</div>';
+    html += '<div class="net-month">' + _monthLabel(pay.month) + '</div></div>';
+
+    html += '<div class="section-title">รายรับ</div>';
+    html += '<table class="pay-table">';
+    html += '<tr><td class="label">เงินเดือน</td><td class="amount">฿' + fmt(pay.salary) + '</td></tr>';
+    if (pay.allowances > 0) html += '<tr><td class="label">เบี้ยเลี้ยงรวม</td><td class="amount">฿' + fmt(pay.allowances) + '</td></tr>';
+    if (pay.otPay > 0) html += '<tr><td class="label">ค่าล่วงเวลา (OT)</td><td class="amount">฿' + fmt(pay.otPay) + '</td></tr>';
+    if (pay.otherIncome > 0) html += '<tr><td class="label">รายรับอื่น</td><td class="amount">฿' + fmt(pay.otherIncome) + '</td></tr>';
+    html += '</table>';
+    html += '<div class="pay-total pay-total-income"><span>รวมรายรับ</span><span>฿' + fmt(pay.totalIncome) + '</span></div>';
+
+    html += '<div class="divider"></div>';
+    html += '<div class="section-title">รายหัก</div>';
+    html += '<table class="pay-table">';
+    html += '<tr class="deduct"><td class="label">ประกันสังคม (SSO)</td><td class="amount">฿' + fmt(pay.sso) + '</td></tr>';
+    if (pay.otherDeduct > 0) html += '<tr class="deduct"><td class="label">หักอื่น</td><td class="amount">฿' + fmt(pay.otherDeduct) + '</td></tr>';
+    html += '</table>';
+    html += '<div class="pay-total pay-total-deduct"><span>รวมรายหัก</span><span>฿' + fmt(pay.totalDeduct) + '</span></div>';
+
+    if (pay.note) {
+      html += '<div style="margin-top:10px;font-size:12px;color:#666;background:#f8f9fa;border-radius:6px;padding:8px">หมายเหตุ: ' + pay.note + '</div>';
+    }
+  }
+
+  html += '</div></div>';
+
+  // Employee info
+  html += '<div class="card"><div class="card-body">';
+  html += '<div class="section-title">ข้อมูลพนักงาน</div>';
+  html += '<div class="emp-info-grid">';
+  html += '<span class="info-label">ชื่อ</span><span class="info-val">' + _session.name + '</span>';
+  html += '<span class="info-label">แผนก</span><span class="info-val">' + _session.dept + '</span>';
+  html += '<span class="info-label">ตำแหน่ง</span><span class="info-val">' + _session.position + '</span>';
+  html += '<span class="info-label">สถานะ</span><span class="info-val">' + _session.status + '</span>';
+  html += '</div></div></div>';
+
+  $('payContent').innerHTML = html;
+  $('payMonSel').addEventListener('change', function() {
+    _payMonth = this.value;
+    _payLoaded = false;
+    loadPayslip();
+  });
+}
+</script>
+</body>
+</html>
