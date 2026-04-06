@@ -190,6 +190,36 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
 .divider{height:1px;background:var(--gray2);margin:12px 0}
 .section-title{font-size:13px;font-weight:700;color:var(--gray3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
 
+/* Slip Modal */
+.slip-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:12px}
+.slip-modal-overlay.open{display:flex}
+.slip-modal-box{background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.slip-modal-actions{display:flex;gap:8px;padding:14px 20px;border-top:1px solid var(--gray2);justify-content:flex-end;flex-wrap:wrap;background:#fff;border-radius:0 0 16px 16px;position:sticky;bottom:0}
+.btn-slip-request{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-radius:8px;padding:13px 16px;font-size:14px;font-weight:700;width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-slip-request:active{opacity:.85}.btn-slip-request:disabled{opacity:.6}
+/* Professional payslip */
+.payslip{font-family:'Sarabun',Tahoma,sans-serif;color:#333}
+.ps-header{background:#072b4e;color:#fff;padding:20px 24px}
+.ps-header h1{margin:0;font-size:17px;font-weight:700}
+.ps-header p{margin:4px 0 0;font-size:11px;opacity:.7}
+.ps-month{padding:10px 24px;font-size:13px;font-weight:700;background:#f0f4fa;color:#1a3a6c;border-bottom:1px solid #dce8f5}
+.ps-emp{padding:12px 24px;border-bottom:1px solid #eee}
+.ps-emp-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.ps-emp-sub{font-size:12px;color:#888}
+.ps-section{padding:6px 24px;font-size:11px;font-weight:700;color:#888;letter-spacing:.5px;text-transform:uppercase;background:#f8fafd;border-top:1px solid #eee}
+.ps-table{width:100%;border-collapse:collapse}
+.ps-table td{padding:8px 24px;font-size:13px;border-bottom:1px solid #f0f0f0}
+.ps-table td:last-child{text-align:right;font-weight:500}
+.ps-total{background:#e8f0fe}.ps-total td{font-weight:700;color:#1a3a6c;border-top:2px solid #bdd0f5}
+.ps-net{background:#072b4e}.ps-net td{color:#fff;font-weight:700;font-size:15px;border:none;padding:14px 24px}
+.ps-bank{padding:12px 24px;background:#f8fafd;border-top:1px solid #e8edf5;font-size:11px;color:#888}
+@media print{
+  body>*{visibility:hidden!important}
+  #myPrintSlipArea,#myPrintSlipArea *{visibility:visible!important}
+  #myPrintSlipArea{position:fixed;left:0;top:0;width:100%;z-index:9999;background:#fff}
+  .slip-modal-overlay{display:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -254,6 +284,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
   </div>
 </div>
 
+<!-- Slip Modal -->
+<div class="slip-modal-overlay" id="mySlipModal" onclick="if(event.target===this)closeMySlip()">
+  <div class="slip-modal-box">
+    <div id="mySlipContent"></div>
+    <div class="slip-modal-actions">
+      <button class="btn btn-secondary btn-sm" onclick="closeMySlip()">✕ ปิด</button>
+      <button class="btn btn-sm" id="mySlipEmailBtn" onclick="emailMySlip()" style="background:#1a3a6c;color:#fff;display:none">📧 ส่งอีเมลให้ฉัน</button>
+      <button class="btn btn-sm" onclick="printMySlip()" style="background:#2a5298;color:#fff">🖨️ พิมพ์ / บันทึก PDF</button>
+    </div>
+  </div>
+</div>
+<div id="myPrintSlipArea" style="display:none"></div>
+
 <script>
 // ============================================================
 // CONFIG — แก้ URL หลัง deploy Apps Script
@@ -272,6 +315,7 @@ var _homeLoaded = false;
 var _attLoaded = false;
 var _leaveLoaded = false;
 var _payLoaded = false;
+var _myPayCache = {pay: null, empInfo: null};
 
 // ============================================================
 // UTILS
@@ -701,6 +745,7 @@ async function loadPayslip() {
 }
 
 function _renderPayslip(pay, empInfo) {
+  _myPayCache = {pay: pay, empInfo: empInfo};
   var html = '<div class="card">';
   html += '<div class="card-header"><h2>💰 ใบเงินเดือน</h2></div>';
   html += '<div class="card-body">';
@@ -742,6 +787,10 @@ function _renderPayslip(pay, empInfo) {
     }
   }
 
+  html += '</div>';
+  if (pay) {
+    html += '<button class="btn-slip-request" onclick="openMySlip()">📄 ดู / ขอ Slip เงินเดือน</button>';
+  }
   html += '</div></div>';
 
   // Employee info
@@ -760,6 +809,87 @@ function _renderPayslip(pay, empInfo) {
     _payLoaded = false;
     loadPayslip();
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// MY SLIP MODAL
+// ─────────────────────────────────────────────────────────────
+function openMySlip() {
+  var pay = _myPayCache.pay;
+  var empInfo = _myPayCache.empInfo;
+  if (!pay) return;
+  $('mySlipContent').innerHTML = _buildMySlipHtml(pay, empInfo);
+  var emailBtn = $('mySlipEmailBtn');
+  if (emailBtn) emailBtn.style.display = (_session && _session.email) ? '' : 'none';
+  $('mySlipModal').classList.add('open');
+}
+
+function closeMySlip() {
+  $('mySlipModal').classList.remove('open');
+}
+
+function printMySlip() {
+  var pay = _myPayCache.pay;
+  var empInfo = _myPayCache.empInfo;
+  if (!pay) return;
+  var pa = $('myPrintSlipArea');
+  pa.innerHTML = _buildMySlipHtml(pay, empInfo);
+  pa.style.display = 'block';
+  window.print();
+  setTimeout(function() { pa.style.display = 'none'; pa.innerHTML = ''; }, 800);
+}
+
+async function emailMySlip() {
+  if (!_myPayCache.pay) return;
+  var btn = $('mySlipEmailBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '📤 กำลังส่ง...'; }
+  var res = await apiPost({action: 'requestMyPayslip', month: _payMonth});
+  if (btn) { btn.disabled = false; btn.textContent = '📧 ส่งอีเมลให้ฉัน'; }
+  if (res && res.success) alert('✓ ส่งสลิปไปยัง ' + res.sentTo + ' เรียบร้อยแล้ว');
+  else alert('✗ ' + ((res && (res.reason || res.error)) || 'ส่งไม่สำเร็จ'));
+}
+
+function _buildMySlipHtml(pay, empInfo) {
+  function fmt(n) {
+    return (parseFloat(n) || 0).toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+  var ml = _monthLabel(pay.month || _payMonth);
+  var name = _session ? _session.name : (empInfo ? empInfo.name : '');
+  var dept = _session ? _session.dept : (empInfo ? empInfo.dept : '');
+  var pos  = _session ? _session.position : (empInfo ? empInfo.position : '');
+  var bank = empInfo ? (empInfo.bank || '') : '';
+  var bankAcct = empInfo ? (empInfo.bankAcct || '') : '';
+  var bankName = empInfo ? (empInfo.bankName || '') : '';
+  var bankLine = bank ? ('🏦 ' + bank + ' ' + bankAcct + (bankName ? ' · ' + bankName : '')) : '';
+
+  var html = '<div class="payslip">';
+  html += '<div class="ps-header"><h1>📄 สลิปเงินเดือน</h1><p>Good Rich Power Plus</p></div>';
+  html += '<div class="ps-month">' + ml + ' &nbsp;|&nbsp; ' + (pay.empId || _session.empId) + '</div>';
+  html += '<div class="ps-emp"><div class="ps-emp-name">' + name + '</div>';
+  html += '<div class="ps-emp-sub">' + dept + (dept && pos ? ' — ' : '') + pos + '</div></div>';
+
+  html += '<div class="ps-section">รายรับ</div>';
+  html += '<table class="ps-table">';
+  html += '<tr><td>เงินเดือน</td><td>฿' + fmt(pay.salary) + '</td></tr>';
+  if ((pay.allowances || 0) > 0) html += '<tr><td>เบี้ยเลี้ยงรวม</td><td>฿' + fmt(pay.allowances) + '</td></tr>';
+  if ((pay.otPay || 0) > 0)      html += '<tr><td>ค่าล่วงเวลา (OT)</td><td>฿' + fmt(pay.otPay) + '</td></tr>';
+  if ((pay.otherIncome || 0) > 0) html += '<tr><td>รายรับอื่น</td><td>฿' + fmt(pay.otherIncome) + '</td></tr>';
+  html += '<tr class="ps-total"><td>รวมรายรับ</td><td>฿' + fmt(pay.totalIncome) + '</td></tr>';
+  html += '</table>';
+
+  html += '<div class="ps-section">รายหัก</div>';
+  html += '<table class="ps-table">';
+  html += '<tr><td>ประกันสังคม (SSO)</td><td>฿' + fmt(pay.sso) + '</td></tr>';
+  if ((pay.otherDeduct || 0) > 0) html += '<tr><td>หักอื่นๆ</td><td>฿' + fmt(pay.otherDeduct) + '</td></tr>';
+  html += '<tr class="ps-total"><td>รวมรายหัก</td><td>฿' + fmt(pay.totalDeduct) + '</td></tr>';
+  html += '</table>';
+
+  html += '<table class="ps-table"><tr class="ps-net"><td>💰 เงินสุทธิที่ได้รับ</td><td>฿' + fmt(pay.netPay) + '</td></tr></table>';
+
+  if (bankLine) html += '<div class="ps-bank">' + bankLine + '</div>';
+  if (pay.note) html += '<div class="ps-bank" style="color:#555;font-size:12px">หมายเหตุ: ' + pay.note + '</div>';
+  html += '</div>';
+  return html;
 }
 </script>
 </body>
