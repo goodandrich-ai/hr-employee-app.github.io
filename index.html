@@ -152,6 +152,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
     <div class="login-input-wrap">
       <input type="tel" id="loginInput" maxlength="13" placeholder="เลขบัตรประชาชน 13 หลัก" inputmode="numeric" autocomplete="off">
     </div>
+    <div class="login-input-wrap">
+      <input type="text" id="laserInput" maxlength="12" placeholder="เลเซอร์โค้ดหลังบัตร (12 ตัว)" autocomplete="off" style="letter-spacing:1px;text-align:center;text-transform:uppercase">
+    </div>
+    <div style="font-size:11px;color:#999;margin-top:-10px;margin-bottom:12px">เลขหลังบัตรประชาชน เช่น JT1234567890</div>
     <button class="btn btn-primary btn-block" id="loginBtn">เข้าสู่ระบบ</button>
     <div class="login-error" id="loginError"></div>
     <div class="login-loading" id="loginLoading">กำลังตรวจสอบ...</div>
@@ -196,7 +200,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
 // ============================================================
 // CONFIG — แก้ URL หลัง deploy Apps Script
 // ============================================================
-var API_URL = 'https://script.google.com/macros/s/AKfycbzB4-h_Av45KztpBp43wmPYd0XM-o_ltBVmgPedIT21BkFfrBDrnFtfTsS3EGN4k1fjpg/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbzSqWzDIHI9NBT2uqjfnQY2dVcadmIIXns4ztfpDSSRRF3Yk1-kpxVOf9nlpruWPJoyQw/exec';
 
 // ============================================================
 // STATE
@@ -259,15 +263,19 @@ async function apiPost(payload) {
 // ============================================================
 $('loginBtn').addEventListener('click', doLogin);
 $('loginInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+$('laserInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+$('laserInput').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 
 async function doLogin() {
   var cred = $('loginInput').value.replace(/\D/g, '');
+  var laser = $('laserInput').value.trim().toUpperCase();
   $('loginError').textContent = '';
   if (cred.length !== 13) { $('loginError').textContent = 'กรุณากรอกเลขบัตรประชาชน 13 หลัก'; return; }
+  if (laser.length < 8) { $('loginError').textContent = 'กรุณากรอกเลเซอร์โค้ดหลังบัตรประชาชน'; return; }
   $('loginLoading').style.display = 'block';
   $('loginBtn').disabled = true;
   try {
-    var result = await apiGet('login', {credential: cred});
+    var result = await apiGet('login', {credential: cred, laserCode: laser});
     if (!result.success) { $('loginError').textContent = result.error; return; }
     _session = result.data;
     _credential = cred;
@@ -291,6 +299,7 @@ $('logoutBtn').addEventListener('click', function() {
   $('appScreen').classList.remove('active');
   $('loginScreen').classList.add('active');
   $('loginInput').value = '';
+  $('laserInput').value = '';
   $('loginError').textContent = '';
 });
 
