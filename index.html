@@ -8,7 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Sarabun',Tahoma,sans-serif;background:#f0f2f5;color:#333;min-height:100vh}
+html,body{height:100%}
+body{font-family:'Sarabun',Tahoma,sans-serif;background:#f0f2f5;color:#333}
 button{cursor:pointer;border:none;font-family:inherit;font-size:14px}
 input,select,textarea{font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid #d0d0d0;border-radius:8px;width:100%}
 input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-shadow:0 0 0 3px rgba(26,58,108,.15)}
@@ -24,37 +25,85 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
 
 /* Layout */
 .screen{display:none}.screen.active{display:block}
-.container{max-width:720px;margin:0 auto;padding:12px 16px 80px}
+.container{max-width:720px;margin:0 auto;padding:12px 14px 80px}
 
-/* Login */
-#loginScreen{background:linear-gradient(135deg,var(--navy),var(--blue));min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
-.login-card{background:#fff;border-radius:16px;padding:40px 32px;width:100%;max-width:380px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.25)}
-.login-logo{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
-.login-sub{font-size:13px;color:var(--gray3);margin-bottom:28px}
-.login-input-wrap{position:relative;margin-bottom:16px}
-.login-input-wrap input{padding:12px 16px;font-size:16px;letter-spacing:2px;text-align:center}
-.login-error{color:var(--red);font-size:13px;margin-top:8px;min-height:20px}
+/* ── Login Screen — fixed overlay, ไม่ scroll ออก ── */
+#loginScreen{
+  position:fixed;inset:0;z-index:200;
+  background:linear-gradient(160deg,#0d1f3e 0%,var(--navy) 45%,var(--blue) 100%);
+  display:none;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto;
+}
+#loginScreen.active{display:flex}
+.login-card{
+  background:#fff;border-radius:20px;
+  padding:30px 24px;width:100%;max-width:340px;
+  text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.4);
+}
+.login-brand{margin-bottom:22px}
+.login-brand-icon{
+  width:54px;height:54px;margin:0 auto 10px;
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;
+}
+.login-brand-name{font-size:17px;font-weight:700;color:var(--navy)}
+.login-brand-sub{font-size:12px;color:var(--gray3);margin-top:2px}
+.login-field{margin-bottom:14px;text-align:left}
+.login-field-label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;display:block}
+.login-field input{font-size:16px;text-align:center;letter-spacing:2px;padding:12px}
+.login-hint{font-size:11px;color:var(--gray3);margin-top:5px;text-align:center}
+.login-btn{
+  width:100%;padding:14px;margin-top:6px;
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  color:#fff;border-radius:10px;font-size:15px;font-weight:700;transition:.15s;
+}
+.login-btn:active{opacity:.85}.login-btn:disabled{opacity:.6}
+.login-error{color:var(--red);font-size:13px;margin-top:10px;min-height:20px;font-weight:600}
 .login-loading{color:var(--blue);font-size:13px;margin-top:8px;display:none}
 
 /* Topbar */
-.topbar{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.topbar{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
 .topbar-info{display:flex;flex-direction:column}
-.topbar-name{font-size:15px;font-weight:700}
-.topbar-dept{font-size:11px;opacity:.8}
-.btn-logout{background:rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px}
+.topbar-name{font-size:14px;font-weight:700}
+.topbar-dept{font-size:10px;opacity:.75}
+.btn-logout{background:rgba(255,255,255,.2);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px}
 
 /* Bottom Nav */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--gray2);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
-.bottom-nav button{flex:1;padding:10px 0 8px;background:none;display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--gray3);gap:2px}
+.bottom-nav button{flex:1;padding:8px 0 6px;background:none;display:flex;flex-direction:column;align-items:center;font-size:9px;color:var(--gray3);gap:1px}
 .bottom-nav button.active{color:var(--blue)}
-.nav-icon{font-size:20px}
+.nav-icon{font-size:19px}
+
+/* Dashboard */
+.dash-greeting{background:linear-gradient(135deg,#0d1f3e,var(--blue));border-radius:14px;padding:18px 20px;color:#fff;margin-bottom:12px}
+.dash-greeting-hi{font-size:12px;opacity:.8;margin-bottom:3px}
+.dash-greeting-name{font-size:22px;font-weight:700;margin-bottom:3px}
+.dash-greeting-pos{font-size:11px;opacity:.65}
+.dash-net-card{background:linear-gradient(135deg,var(--navy),#1565c0);border-radius:12px;padding:16px 18px;color:#fff;margin-bottom:12px}
+.dash-net-label{font-size:11px;opacity:.8;margin-bottom:4px}
+.dash-net-amount{font-size:32px;font-weight:700;line-height:1;margin-bottom:4px}
+.dash-net-detail{font-size:11px;opacity:.7}
+.dash-net-badge{display:inline-block;margin-top:10px;background:rgba(255,255,255,.15);border-radius:6px;padding:5px 10px;font-size:11px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.dash-stat{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);position:relative;overflow:hidden}
+.dash-stat-label{font-size:10px;color:var(--gray3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px}
+.dash-stat-value{font-size:28px;font-weight:700;line-height:1}
+.dash-stat-sub{font-size:10px;color:var(--gray3);margin-top:4px}
+.dash-stat-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:30px;opacity:.12}
+.dash-stat.c-orange{border-left:4px solid var(--orange)}.dash-stat.c-orange .dash-stat-value{color:var(--orange)}
+.dash-stat.c-blue{border-left:4px solid var(--blue)}.dash-stat.c-blue .dash-stat-value{color:var(--blue)}
+.dash-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.dash-action{background:#fff;border-radius:10px;padding:14px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;border:1.5px solid transparent;transition:.15s}
+.dash-action:active{border-color:var(--blue);background:#f0f4ff}
+.dash-action-icon{font-size:24px;margin-bottom:5px}
+.dash-action-label{font-size:11px;color:#444;font-weight:600}
 
 /* Cards */
 .card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;margin-bottom:12px}
-.card-header{background:linear-gradient(135deg,var(--navy),var(--blue));padding:16px 20px;color:#fff}
-.card-header h2{font-size:16px;font-weight:700}
-.card-header p{font-size:12px;opacity:.8;margin-top:2px}
-.card-body{padding:16px 20px}
+.card-header{background:linear-gradient(135deg,var(--navy),var(--blue));padding:12px 16px;color:#fff}
+.card-header h2{font-size:15px;font-weight:700}
+.card-header p{font-size:11px;opacity:.8;margin-top:2px}
+.card-body{padding:14px 16px}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 20px;border-radius:8px;font-weight:600;font-size:14px;transition:all .15s;gap:6px}
@@ -141,38 +190,28 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
 .divider{height:1px;background:var(--gray2);margin:12px 0}
 .section-title{font-size:13px;font-weight:700;color:var(--gray3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
 
-/* Mobile compact */
-@media(max-width:480px){
-  .login-card{padding:28px 20px;border-radius:12px}
-  .login-sub{margin-bottom:18px}
-  .login-input-wrap input{font-size:16px;padding:11px 12px}
-  .card-header{padding:12px 16px}
-  .card-body{padding:12px 14px}
-  .container{padding:10px 12px 80px}
-  .att-summary{grid-template-columns:repeat(4,1fr);gap:5px}
-  .att-sum-box{padding:8px 4px}
-  .att-sum-box .sum-num{font-size:18px}
-  .att-sum-box .sum-label{font-size:9px}
-  .net-amount{font-size:24px}
-  .btn-block{padding:13px}
-}
 </style>
 </head>
 <body>
 
-<!-- ═══ LOGIN SCREEN ═══ -->
+<!-- ═══ LOGIN SCREEN (fixed overlay) ═══ -->
 <div id="loginScreen" class="screen active">
   <div class="login-card">
-    <div class="login-logo">Good Rich Power Plus</div>
-    <div class="login-sub">ระบบ HR Self-Service พนักงาน</div>
-    <div class="login-input-wrap">
-      <input type="tel" id="loginInput" maxlength="13" placeholder="เลขบัตรประชาชน 13 หลัก" inputmode="numeric" autocomplete="off">
+    <div class="login-brand">
+      <div class="login-brand-icon">🏭</div>
+      <div class="login-brand-name">Good Rich Power Plus</div>
+      <div class="login-brand-sub">ระบบ HR Self-Service พนักงาน</div>
     </div>
-    <div class="login-input-wrap">
-      <input type="text" id="laserInput" maxlength="12" placeholder="เลเซอร์โค้ดหลังบัตร (12 ตัว)" autocomplete="off" style="letter-spacing:1px;text-align:center;text-transform:uppercase">
+    <div class="login-field">
+      <span class="login-field-label">เลขบัตรประชาชน</span>
+      <input type="tel" id="loginInput" maxlength="13" placeholder="กรอก 13 หลัก" inputmode="numeric" autocomplete="off">
     </div>
-    <div style="font-size:11px;color:#999;margin-top:-10px;margin-bottom:12px">เลขหลังบัตรประชาชน เช่น JT1234567890</div>
-    <button class="btn btn-primary btn-block" id="loginBtn">เข้าสู่ระบบ</button>
+    <div class="login-field">
+      <span class="login-field-label">เลเซอร์โค้ดหลังบัตร</span>
+      <input type="text" id="laserInput" maxlength="12" placeholder="เช่น JT1234567890" autocomplete="off" style="text-transform:uppercase">
+      <div class="login-hint">ตัวอักษร+ตัวเลข 12 หลัก ด้านหลังบัตรประชาชน</div>
+    </div>
+    <button class="login-btn" id="loginBtn">เข้าสู่ระบบ</button>
     <div class="login-error" id="loginError"></div>
     <div class="login-loading" id="loginLoading">กำลังตรวจสอบ...</div>
   </div>
@@ -189,16 +228,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
   </div>
 
   <div class="container">
+    <!-- Tab: Home Dashboard -->
+    <div id="tabHome" class="tab-content">
+      <div id="homeContent"><div class="loading">⏳ กำลังโหลด...</div></div>
+    </div>
     <!-- Tab: Attendance -->
-    <div id="tabAttendance" class="tab-content">
+    <div id="tabAttendance" class="tab-content" style="display:none">
       <div id="attContent"><div class="loading">⏳ กำลังโหลด...</div></div>
     </div>
-
     <!-- Tab: Leave -->
     <div id="tabLeave" class="tab-content" style="display:none">
       <div id="leaveContent"><div class="loading">⏳ กำลังโหลด...</div></div>
     </div>
-
     <!-- Tab: Payslip -->
     <div id="tabPayslip" class="tab-content" style="display:none">
       <div id="payContent"><div class="loading">⏳ กำลังโหลด...</div></div>
@@ -206,7 +247,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
   </div>
 
   <div class="bottom-nav" id="bottomNav">
-    <button data-tab="tabAttendance" class="active"><span class="nav-icon">📅</span>ตารางมา</button>
+    <button data-tab="tabHome" class="active"><span class="nav-icon">🏠</span>หน้าหลัก</button>
+    <button data-tab="tabAttendance"><span class="nav-icon">📅</span>ตารางมา</button>
     <button data-tab="tabLeave"><span class="nav-icon">📝</span>ลางาน</button>
     <button data-tab="tabPayslip"><span class="nav-icon">💰</span>เงินเดือน</button>
   </div>
@@ -226,6 +268,7 @@ var _credential = '';
 var _months = [];
 var _attMonth = '';
 var _payMonth = '';
+var _homeLoaded = false;
 var _attLoaded = false;
 var _leaveLoaded = false;
 var _payLoaded = false;
@@ -278,7 +321,7 @@ async function apiPost(payload) {
 // LOGIN
 // ============================================================
 $('loginBtn').addEventListener('click', doLogin);
-$('loginInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+$('loginInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') $('laserInput').focus(); });
 $('laserInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
 $('laserInput').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 
@@ -302,7 +345,7 @@ async function doLogin() {
     $('topName').textContent = _session.name + (_session.nickname ? ' (' + _session.nickname + ')' : '');
     $('topDept').textContent = _session.dept + ' — ' + _session.position;
     await _loadMonths();
-    loadAttendance();
+    loadHome();
   } catch(err) {
     $('loginError').textContent = 'เกิดข้อผิดพลาด: ' + err.message;
   } finally {
@@ -313,12 +356,17 @@ async function doLogin() {
 
 $('logoutBtn').addEventListener('click', function() {
   _session = null; _credential = '';
-  _attLoaded = false; _leaveLoaded = false; _payLoaded = false;
+  _homeLoaded = false; _attLoaded = false; _leaveLoaded = false; _payLoaded = false;
   $('appScreen').classList.remove('active');
   $('loginScreen').classList.add('active');
   $('loginInput').value = '';
   $('laserInput').value = '';
   $('loginError').textContent = '';
+  // reset nav to home tab
+  document.querySelectorAll('.bottom-nav button').forEach(function(b){b.classList.remove('active');});
+  document.querySelector('.bottom-nav button[data-tab="tabHome"]').classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(function(t){t.style.display='none';});
+  $('tabHome').style.display = '';
 });
 
 // ============================================================
@@ -332,10 +380,97 @@ $('bottomNav').addEventListener('click', function(e) {
   btn.classList.add('active');
   document.querySelectorAll('.tab-content').forEach(function(t) { t.style.display = 'none'; });
   $(tab).style.display = '';
+  window.scrollTo(0, 0);
+  if (tab === 'tabHome') loadHome();
   if (tab === 'tabAttendance') loadAttendance();
   if (tab === 'tabLeave' && !_leaveLoaded) loadLeave();
   if (tab === 'tabPayslip' && !_payLoaded) loadPayslip();
 });
+
+function goTab(tabId) {
+  var btn = document.querySelector('.bottom-nav button[data-tab="' + tabId + '"]');
+  if (btn) btn.click();
+}
+
+// ============================================================
+// HOME DASHBOARD
+// ============================================================
+async function loadHome() {
+  if (!_session || _homeLoaded) return;
+  _homeLoaded = true;
+  $('homeContent').innerHTML = '<div class="loading">⏳ กำลังโหลด...</div>';
+  var nowM = _nowMonth();
+  try {
+    var r = await Promise.all([
+      apiGet('getPayslip', {empId: _session.empId, credential: _credential, month: nowM}),
+      apiGet('getLeave',   {empId: _session.empId, credential: _credential})
+    ]);
+    _renderHome(r[0], r[1], nowM);
+  } catch(e) {
+    $('homeContent').innerHTML = '<div class="loading">⚠️ โหลดข้อมูลไม่ได้</div>';
+  }
+}
+
+function _renderHome(payRes, leaveRes, nowM) {
+  var name = _session.nickname || _session.name.split(' ')[0];
+  var pending = 0, leavedays = 0;
+  if (leaveRes.success) {
+    leaveRes.data.forEach(function(r) {
+      if (r.status === 'รออนุมัติ') pending++;
+      if (r.status === 'อนุมัติ' && String(r.startDate).indexOf(nowM) === 0) leavedays += Number(r.days) || 0;
+    });
+  }
+  var pay = (payRes.success && payRes.data) ? payRes.data : null;
+  var html = '';
+
+  // Greeting
+  html += '<div class="dash-greeting">';
+  html += '<div class="dash-greeting-hi">' + _getGreeting() + '</div>';
+  html += '<div class="dash-greeting-name">' + name + ' \uD83D\uDC4B</div>';
+  html += '<div class="dash-greeting-pos">' + _session.dept + ' \u00B7 ' + _session.position + '</div>';
+  html += '</div>';
+
+  // Net pay card
+  html += '<div class="dash-net-card">';
+  html += '<div class="dash-net-label">\u0E40\u0E07\u0E34\u0E19\u0E2A\u0E38\u0E17\u0E18\u0E34\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E19\u0E35\u0E49 (' + _monthLabel(nowM) + ')</div>';
+  if (pay) {
+    html += '<div class="dash-net-amount">\u0E3F' + fmt(pay.netPay) + '</div>';
+    html += '<div class="dash-net-detail">\u0E23\u0E32\u0E22\u0E44\u0E14\u0E49\u0E23\u0E27\u0E21 \u0E3F' + fmt(pay.totalIncome) + '&nbsp;&nbsp;\u00B7&nbsp;&nbsp;\u0E2B\u0E31\u0E01\u0E23\u0E27\u0E21 \u0E3F' + fmt(pay.totalDeduct) + '</div>';
+    html += '<div class="dash-net-badge">' + (pay.status === 'confirmed' ? '\u2705 \u0E22\u0E37\u0E19\u0E22\u0E31\u0E19\u0E41\u0E25\u0E49\u0E27' : '\u23F3 \u0E23\u0E2D HR Confirm') + '</div>';
+  } else {
+    html += '<div class="dash-net-amount" style="font-size:18px;opacity:.75">\u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E21\u0E35\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25</div>';
+    html += '<div class="dash-net-detail">HR \u0E22\u0E31\u0E07\u0E44\u0E21\u0E48\u0E44\u0E14\u0E49\u0E1A\u0E31\u0E19\u0E17\u0E36\u0E01\u0E40\u0E07\u0E34\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E19\u0E35\u0E49</div>';
+  }
+  html += '</div>';
+
+  // Stats
+  html += '<div class="dash-grid">';
+  html += '<div class="dash-stat c-orange"><div class="dash-stat-label">\u0E23\u0E2D\u0E2D\u0E19\u0E38\u0E21\u0E31\u0E15\u0E34</div>';
+  html += '<div class="dash-stat-value">' + pending + '</div>';
+  html += '<div class="dash-stat-sub">\u0E43\u0E1A\u0E25\u0E32\u0E04\u0E49\u0E32\u0E07\u0E2D\u0E22\u0E39\u0E48</div>';
+  html += '<span class="dash-stat-icon">\uD83D\uDCCB</span></div>';
+  html += '<div class="dash-stat c-blue"><div class="dash-stat-label">\u0E25\u0E32\u0E40\u0E14\u0E37\u0E2D\u0E19\u0E19\u0E35\u0E49</div>';
+  html += '<div class="dash-stat-value">' + leavedays + '</div>';
+  html += '<div class="dash-stat-sub">\u0E27\u0E31\u0E19 (\u0E2D\u0E19\u0E38\u0E21\u0E31\u0E15\u0E34\u0E41\u0E25\u0E49\u0E27)</div>';
+  html += '<span class="dash-stat-icon">\uD83D\uDDD3\uFE0F</span></div>';
+  html += '</div>';
+
+  // Quick actions
+  html += '<div class="dash-actions">';
+  html += '<div class="dash-action" onclick="goTab(\'tabAttendance\')"><div class="dash-action-icon">\uD83D\uDCC5</div><div class="dash-action-label">\u0E15\u0E32\u0E23\u0E32\u0E07\u0E21\u0E32</div></div>';
+  html += '<div class="dash-action" onclick="goTab(\'tabLeave\')"><div class="dash-action-icon">\uD83D\uDCDD</div><div class="dash-action-label">\u0E22\u0E37\u0E48\u0E19\u0E43\u0E1A\u0E25\u0E32</div></div>';
+  html += '<div class="dash-action" onclick="goTab(\'tabPayslip\')"><div class="dash-action-icon">\uD83D\uDCB0</div><div class="dash-action-label">\u0E43\u0E1A\u0E40\u0E07\u0E34\u0E19\u0E40\u0E14\u0E37\u0E2D\u0E19</div></div>';
+  html += '</div>';
+
+  $('homeContent').innerHTML = html;
+}
+
+function _getGreeting() {
+  var h = new Date().getHours();
+  if (h < 12) return '\u0E2D\u0E23\u0E38\u0E13\u0E2A\u0E27\u0E31\u0E2A\u0E14\u0E34\u0E4C \u2600\uFE0F';
+  if (h < 17) return '\u0E2A\u0E27\u0E31\u0E2A\u0E14\u0E35\u0E15\u0E2D\u0E19\u0E1A\u0E48\u0E32\u0E22 \uD83C\uDF24\uFE0F';
+  return '\u0E2A\u0E27\u0E31\u0E2A\u0E14\u0E35\u0E15\u0E2D\u0E19\u0E40\u0E22\u0E47\u0E19 \uD83C\uDF19';
+}
 
 // ============================================================
 // MONTHS
@@ -538,6 +673,7 @@ async function submitLeave() {
   if (r.success) {
     msg.style.color = 'green'; msg.textContent = '✅ ยื่นใบลาเรียบร้อย รอ HR อนุมัติ';
     _leaveLoaded = false;
+    _homeLoaded = false;
     setTimeout(loadLeave, 1000);
   } else {
     msg.style.color = 'red'; msg.textContent = '❌ ' + r.error;
@@ -548,7 +684,7 @@ async function submitLeave() {
 async function cancelLeave(requestId) {
   if (!confirm('ยืนยันยกเลิกใบลานี้?')) return;
   var r = await apiPost({action:'cancelLeave', requestId:requestId});
-  if (r.success) { _leaveLoaded = false; loadLeave(); }
+  if (r.success) { _leaveLoaded = false; _homeLoaded = false; loadLeave(); }
   else alert('❌ ' + r.error);
 }
 
