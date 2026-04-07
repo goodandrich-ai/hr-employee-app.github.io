@@ -274,6 +274,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
     <div id="tabPayslip" class="tab-content" style="display:none">
       <div id="payContent"><div class="loading">⏳ กำลังโหลด...</div></div>
     </div>
+    <!-- Tab: YTD Annual Summary -->
+    <div id="tabYTD" class="tab-content" style="display:none">
+      <div id="ytdContent"><div class="loading">⏳ กำลังโหลด...</div></div>
+    </div>
   </div>
 
   <div class="bottom-nav" id="bottomNav">
@@ -281,6 +285,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a6c;box-sh
     <button data-tab="tabAttendance"><span class="nav-icon">📅</span>ตารางมา</button>
     <button data-tab="tabLeave"><span class="nav-icon">📝</span>ลางาน</button>
     <button data-tab="tabPayslip"><span class="nav-icon">💰</span>เงินเดือน</button>
+    <button data-tab="tabYTD"><span class="nav-icon">📈</span>สรุปปี</button>
   </div>
 </div>
 
@@ -315,6 +320,9 @@ var _homeLoaded = false;
 var _attLoaded = false;
 var _leaveLoaded = false;
 var _payLoaded = false;
+var _ytdLoaded = false;
+var _ytdYear = String(new Date().getFullYear());
+var _leaveQuota = null;
 var _myPayCache = {pay: null, empInfo: null};
 
 // ============================================================
@@ -429,6 +437,7 @@ $('bottomNav').addEventListener('click', function(e) {
   if (tab === 'tabAttendance') loadAttendance();
   if (tab === 'tabLeave' && !_leaveLoaded) loadLeave();
   if (tab === 'tabPayslip' && !_payLoaded) loadPayslip();
+  if (tab === 'tabYTD' && !_ytdLoaded) loadYTD();
 });
 
 function goTab(tabId) {
@@ -612,7 +621,7 @@ function _renderAttendance(records) {
   for (var e = 0; e < firstDay; e++) html += '<div class="cal-cell empty"></div>';
   for (var d = 1; d <= daysInMonth; d++) {
     var dow = (firstDay + d - 1) % 7;
-    var isWeekend = dow === 0 || dow === 6;
+    var isWeekend = dow === 0; // Sunday only (Mon–Sat = working days)
     var rec = recMap[d];
     var st = rec ? String(rec.status || '') : (isWeekend ? 'วันหยุด' : '');
     var cls = statusClass[st] || (isWeekend ? 'off' : 'nodata');
@@ -645,21 +654,62 @@ function _renderAttendance(records) {
 async function loadLeave() {
   if (!_session) return;
   _leaveLoaded = true;
-  $('leaveContent').innerHTML = '<div class="loading">⏳ กำลังโหลด...</div>';
-  var r = await apiGet('getLeave', {empId: _session.empId, credential: _credential});
-  if (!r.success) { $('leaveContent').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>' + r.error + '</div>'; return; }
+  $('leaveContent').innerHTML = '\u23f3 กำลังโหลด...';
+  var year = String(new Date().getFullYear());
+  var results = await Promise.all([
+    apiGet('getLeave', {empId: _session.empId, credential: _credential}),
+    apiGet('getMyLeaveQuota', {empId: _session.empId, credential: _credential, year: year})
+  ]);
+  var r = results[0], qr = results[1];
+  if (!r.success) { $('leaveContent').innerHTML = r.error; return; }
+  _leaveQuota = (qr && qr.success) ? qr.data : null;
   _renderLeave(r.data);
 }
 
+function _buildQuotaCards() {
+  if (!_leaveQuota) {
+    return '<div class="card"><div class="card-body" style="text-align:center;color:#999;font-size:13px;padding:14px">'
+      +'\u26a0\ufe0f ยังไม่มีข้อมูลสิทธิ์วันลา — กรุณาติดต่อ HR</div></div>';
+  }
+  var yr = _leaveQuota.year || String(new Date().getFullYear());
+  var html = '<div class="card"><div class="card-header"><h2>\ud83d\udcca สิทธิ์วันลา ปี ' + yr + '</h2></div>'
+    +'<div class="card-body"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:4px">';
+  function qCard(label, grp) {
+    var rem = grp.remaining, q = grp.quota, u = grp.used;
+    var pct = q ? Math.min(100, Math.round((u/q)*100)) : 0;
+    var clr = rem <= 0 ? '#c62828' : pct >= 70 ? '#f9a825' : '#2e7d32';
+    return '<div style="background:#f8f9fa;border-radius:10px;padding:10px;border:1px solid #e0e0e0">'
+      +'<div style="font-size:10px;color:#999;margin-bottom:2px">'+label+'</div>'
+      +'<div style="font-size:22px;font-weight:700;color:'+clr+'">'+rem+'</div>'
+      +'<div style="font-size:10px;color:#999">ใช้ '+u+' จาก '+q+' วัน</div>'
+      +'<div style="height:3px;background:#e0e0e0;border-radius:2px;margin-top:4px">'
+      +'<div style="height:100%;width:'+pct+'%;background:'+clr+';border-radius:2px"></div></div></div>';
+  }
+  html += qCard('\u0e25\u0e32\u0e1b\u0e48\u0e27\u0e22', _leaveQuota.sick);
+  html += qCard('\u0e25\u0e32\u0e01\u0e34\u0e08', _leaveQuota.personal);
+  html += qCard('\u0e25\u0e32\u0e01\u0e34\u0e08\u0e1e\u0e34\u0e40\u0e28\u0e29', _leaveQuota.specialPersonal);
+  html += qCard('\u0e1e\u0e31\u0e01\u0e23\u0e49\u0e2d\u0e19', _leaveQuota.vacation);
+  if (_leaveQuota.matPaid && _leaveQuota.matPaid.quota > 0) html += qCard('\u0e25\u0e32\u0e04\u0e25\u0e2d\u0e14 (\u0e23\u0e31\u0e1a\u0e40\u0e07\u0e34\u0e19)', _leaveQuota.matPaid);
+  if (_leaveQuota.prenatal && _leaveQuota.prenatal.quota > 0) html += qCard('\u0e25\u0e32\u0e1d\u0e32\u0e01\u0e04\u0e23\u0e23\u0e20\u0e4c', _leaveQuota.prenatal);
+  html += '</div></div></div>';
+  return html;
+}
+
 function _renderLeave(records) {
-  var html = '';
+  var html = _buildQuotaCards();
 
   // Form card
   html += '<div class="card">';
   html += '<div class="card-header"><h2>📝 ยื่นใบลา</h2></div>';
   html += '<div class="card-body">';
   html += '<div class="form-group"><label class="form-label">ประเภทการลา</label>';
-  html += '<select id="lvType"><option>ลาป่วย</option><option>ลากิจ</option><option>ลาพักร้อน</option><option>ลาคลอด</option></select></div>';
+  html += '<select id="lvType">'
+    +'<option>ลาป่วย</option><option>ลากิจ</option><option>ลากิจพิเศษ</option>'
+    +'<option>ลาพักร้อน</option><option>ลาป่วยไม่รับค่าจ้าง</option>'
+    +'<option>ลากิจไม่รับค่าจ้าง</option><option>ลาคลอดรับเงิน</option>'
+    +'<option>ลาคลอดไม่รับเงิน</option><option>ลาฝากครรภ์</option>'
+    +'<option>ลาราชการทหาร</option>'
+    +'</select></div>';
   html += '<div style="display:flex;gap:10px;margin-bottom:14px">';
   html += '<div style="flex:1"><label class="form-label">วันที่เริ่ม</label><input type="date" id="lvStart"></div>';
   html += '<div style="flex:1"><label class="form-label">วันที่สิ้นสุด</label><input type="date" id="lvEnd"></div>';
@@ -710,7 +760,11 @@ async function submitLeave() {
   var msg = $('lvMsg');
   if (!start || !end) { msg.style.color = 'red'; msg.textContent = 'กรุณาเลือกวันที่'; return; }
   if (end < start) { msg.style.color = 'red'; msg.textContent = 'วันสิ้นสุดต้องหลังวันเริ่ม'; return; }
-  var days = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
+  // Count Mon–Sat only (company works Mon–Sat, Sunday is off)
+  var days = 0;
+  var cur = new Date(start);
+  var endD = new Date(end);
+  while (cur <= endD) { if (cur.getDay() !== 0) days++; cur.setDate(cur.getDate() + 1); }
   $('lvSubmitBtn').disabled = true;
   msg.style.color = 'gray'; msg.textContent = 'กำลังส่ง...';
   var r = await apiPost({action:'submitLeave', leaveType:type, startDate:start, endDate:end, days:days, reason:reason});
@@ -890,6 +944,78 @@ function _buildMySlipHtml(pay, empInfo) {
   if (pay.note) html += '<div class="ps-bank" style="color:#555;font-size:12px">หมายเหตุ: ' + pay.note + '</div>';
   html += '</div>';
   return html;
+}
+
+// ============================================================
+// TAB: YTD — สรุปรวมทั้งปี
+// ============================================================
+async function loadYTD() {
+  if (!_session) return;
+  _ytdLoaded = true;
+  $('ytdContent').innerHTML = '\u23f3 กำลังโหลด...';
+  var r = await apiGet('getMyYTD', {empId: _session.empId, credential: _credential, year: _ytdYear});
+  if (!r.success) { $('ytdContent').textContent = r.error; return; }
+  _renderYTD(r.data);
+}
+
+function _renderYTD(data) {
+  function fmt(n) { return (parseFloat(n)||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function _monthLabel(m) {
+    var p=String(m).split('-');
+    var names=['','\u0e21.\u0e04.','\u0e01.\u0e1e.','\u0e21\u0e35.\u0e04.','\u0e40\u0e21.\u0e22.','\u0e1e.\u0e04.','\u0e21\u0e34.\u0e22.','\u0e01.\u0e04.','\u0e2a.\u0e04.','\u0e01.\u0e22.','\u0e15.\u0e04.','\u0e1e.\u0e22.','\u0e18.\u0e04.'];
+    return names[parseInt(p[1])||0]+' '+(parseInt(p[0])+543);
+  }
+
+  var yearOpts = '';
+  for (var y = 2024; y <= 2027; y++) yearOpts += '<option value="'+y+'"'+(String(y)===_ytdYear?' selected':'')+'>'+y+'</option>';
+
+  if (!data || !data.months || data.months.length === 0) {
+    var html = '<div class="card"><div class="card-header"><h2>\ud83d\udcc8 สรุปรายได้ประจำปี</h2></div><div class="card-body">';
+    html += '<div class="form-group"><label class="form-label">ปี</label>';
+    html += '<select onchange="_ytdYear=this.value;_ytdLoaded=false;loadYTD()">'+yearOpts+'</select></div>';
+    html += '<div class="empty" style="padding:20px 0;text-align:center;color:#999">ยังไม่มีข้อมูล Confirm เงินเดือนในปี '+_ytdYear+'</div>';
+    html += '</div></div>';
+    $('ytdContent').innerHTML = html;
+    return;
+  }
+
+  var t = data.totals;
+  var html = '<div class="card"><div class="card-header"><h2>\ud83d\udcc8 สรุปรายได้ปี '+_ytdYear+'</h2><p>'+esc(data.name)+' · '+esc(data.dept)+'</p></div><div class="card-body">';
+  html += '<div class="form-group"><label class="form-label">ปี</label>';
+  html += '<select onchange="_ytdYear=this.value;_ytdLoaded=false;loadYTD()">'+yearOpts+'</select></div>';
+
+  // Stat cards
+  html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">';
+  function sCard(label, val, cls) {
+    return '<div class="att-sum-box '+cls+'"><div class="att-sum-num">'+val+'</div><div class="att-sum-label">'+label+'</div></div>';
+  }
+  html += sCard('\u0e23\u0e32\u0e22\u0e23\u0e31\u0e1a\u0e2a\u0e30\u0e2a\u0e21 ('+t.monthCount+' \u0e40\u0e14\u0e37\u0e2d\u0e19)', '\u0e3f'+fmt(t.totalIncome), 'c-green');
+  html += sCard('SSO \u0e2a\u0e30\u0e2a\u0e21', '\u0e3f'+fmt(t.totalSSO), 'c-blue');
+  html += sCard('\u0e20\u0e32\u0e29\u0e35 (\u0e2b\u0e31\u0e01 ณ \u0e17\u0e35\u0e48\u0e08\u0e48\u0e32\u0e22)', '\u0e3f'+fmt(t.totalWithholdingTax), 'c-yellow');
+  html += sCard('\u0e2a\u0e38\u0e17\u0e18\u0e34\u0e4c\u0e23\u0e27\u0e21', '\u0e3f'+fmt(t.totalNet), 'c-blue');
+  html += '</div>';
+
+  // Monthly table
+  html += '<div style="overflow-x:auto"><table class="ytd-table" style="width:100%;font-size:12px;border-collapse:collapse">';
+  html += '<thead><tr style="background:#f0f2f5">';
+  html += '<th style="text-align:left;padding:7px 8px;font-size:11px;color:#999">เดือน</th>';
+  html += '<th style="text-align:right;padding:7px 8px;font-size:11px;color:#999">รายรับ</th>';
+  html += '<th style="text-align:right;padding:7px 8px;font-size:11px;color:#999">SSO</th>';
+  html += '<th style="text-align:right;padding:7px 8px;font-size:11px;color:#999">ภาษี</th>';
+  html += '<th style="text-align:right;padding:7px 8px;font-size:11px;color:#999">สุทธิ</th>';
+  html += '</tr></thead><tbody>';
+  data.months.forEach(function(m) {
+    html += '<tr style="border-bottom:1px solid #e0e0e0">';
+    html += '<td style="padding:7px 8px;font-weight:500">'+_monthLabel(m.month)+'</td>';
+    html += '<td style="text-align:right;padding:7px 8px">\u0e3f'+fmt(m.totalIncome)+'</td>';
+    html += '<td style="text-align:right;padding:7px 8px;color:#999">\u0e3f'+fmt(m.totalSSO)+'</td>';
+    html += '<td style="text-align:right;padding:7px 8px;color:#999">\u0e3f'+fmt(m.withholdingTax)+'</td>';
+    html += '<td style="text-align:right;padding:7px 8px;font-weight:600;color:#2a5298">\u0e3f'+fmt(m.netPay)+'</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  html += '</div></div>';
+  $('ytdContent').innerHTML = html;
 }
 </script>
 </body>
